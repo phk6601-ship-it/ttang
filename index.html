@@ -253,6 +253,7 @@ body.fever #stage{animation:feverglow .6s infinite alternate}
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 /* ==========================================================
    ① Firebase 설정 (부루마블과 같은 paperboom 프로젝트)
@@ -299,8 +300,8 @@ const MODE = qs.has('host') ? 'host' : (qs.has('pad') || qs.has('room')) ? 'pad'
 const fmt = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 const now = () => performance.now();
 let db = null;
-function initDB() {
-  try { firebase.initializeApp(firebaseConfig); db = firebase.database(); return true; }
+async function initDB() {
+  try { firebase.initializeApp(firebaseConfig); db = firebase.database(); await firebase.auth().signInAnonymously(); return true; }
   catch (e) { console.error(e); const w = document.createElement('div'); w.id = 'warnbar'; w.textContent = '인터넷(Firebase)에 연결하지 못했어요. 새로고침해 주세요.'; document.body.appendChild(w); return false; }
 }
 const R = code => DB_ROOT + '/rooms/' + code;
@@ -354,9 +355,9 @@ const SND = {
 /* ==========================================================
    선생님(TV) 화면
    ========================================================== */
-function Host() {
+async function Host() {
   $('#host').classList.remove('hide');
-  if (!initDB()) return;
+  if (!(await initDB())) return;
   const cv = $('#cv'), ctx = cv.getContext('2d');
   let code = null, ref = null;
   let phase = 'lobby', nTeams = 5, dur = 120, left = 120, cd = 0, fever = false;
@@ -713,8 +714,8 @@ function confetti(colors) {
 /* ==========================================================
    학생 방향키 화면
    ========================================================== */
-function Pad() {
-  if (!initDB()) return;
+async function Pad() {
+  if (!(await initDB())) return;
   let pid = localStorage.getItem('ttang_pid');
   if (!pid) { pid = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); localStorage.setItem('ttang_pid', pid); }
   let code = qs.get('room') || localStorage.getItem('ttang_room') || '', team = +(localStorage.getItem('ttang_team') ?? -1), joined = false, ref = null;
